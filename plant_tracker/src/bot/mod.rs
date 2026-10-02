@@ -89,6 +89,7 @@ pub async fn plant_bot() {
 // / Sends morning watering reminders to all users at 09:00.
 // / Checks every 30 seconds, sleeps 60 seconds after sending to avoid double-send.
 pub async fn notification_loop(bot_clone: Bot, pool_clone: PgPool) -> anyhow::Result<()> {
+    
     loop {
         tracing::warn!("notification loop started");
 
@@ -104,13 +105,15 @@ pub async fn notification_loop(bot_clone: Bot, pool_clone: PgPool) -> anyhow::Re
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
 
-    #[test]
-    fn tz_minsk_test() {
-        let now = Utc::now().with_timezone(&Tz::Europe__Minsk);
-        dbg!(now);
+
+#[cfg(test)]
+    mod tests {
+        use super::*;
+
+        #[test]
+        fn tz_minsk_test() {
+            let now = Utc::now().with_timezone(&Tz::Europe__Minsk);
+            dbg!(now);
+        }
     }
-}

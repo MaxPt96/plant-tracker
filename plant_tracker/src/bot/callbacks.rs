@@ -73,3 +73,22 @@ fn get_yesterday_date() -> DateTime<Utc> {
 
     today.checked_sub_days(Days::new(1)).unwrap()
 }
+
+
+
+#[cfg(test)]
+    mod tests {
+        use super::*;
+
+        #[test]
+        fn get_current_date_test() {
+            let date = get_current_date();
+            dbg!(date);
+        }
+         #[test]
+        fn get_yesteday_date_test() {
+            let date = get_yesterday_date();
+            dbg!(date);
+        }
+
+    }

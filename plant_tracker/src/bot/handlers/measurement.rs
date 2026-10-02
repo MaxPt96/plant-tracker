@@ -1,4 +1,6 @@
 use chrono::{DateTime, NaiveDate, TimeZone, Utc};
+use chrono_tz::Europe;
+use chrono_tz::Tz::Europe__Minsk;
 
 use crate::analytycs_v2::daily_water_loss;
 use crate::bot::dialogue::WateringConfigDialog;
@@ -247,8 +249,35 @@ pub async fn finalize_measurement(
     Ok(())
 }
 
-fn parse_custom_date(data: &str) -> Result<DateTime<Utc>, chrono::ParseError> {
-    let naive = NaiveDate::parse_from_str(data, "%d.%m.%Y")?;
-    let naive_dt = naive.and_hms_opt(0, 0, 0).unwrap();
-    Ok(Utc.from_local_datetime(&naive_dt).unwrap())
+fn parse_custom_date(date: &str) -> Result<DateTime<Utc>, chrono::ParseError> {
+    let naive = NaiveDate::parse_from_str(date, "%d.%m.%Y")?;
+    let naive_dt = naive.and_hms_nano_opt(23, 59, 59, 999_999_999).unwrap();
+    Ok(Europe::Minsk
+        .from_local_datetime(&naive_dt).unwrap()
+        .with_timezone(&Utc)
+        
+        
+        )
 }
+
+
+#[cfg(test)]
+    mod tests {
+        use super::*;
+
+        #[test]
+        fn parse_custom_date_test() {
+            let date = "14.05.2026";
+             let naive = NaiveDate::parse_from_str(date, "%d.%m.%Y").unwrap();
+              let naive_dt = naive.and_hms_nano_opt(23, 59, 59, 999_999_999).unwrap();
+            let test_date = Europe::Minsk
+        .from_local_datetime(&naive_dt).unwrap()
+        .with_timezone(&Utc);
+            
+            let expect = parse_custom_date(date).unwrap();
+            assert_eq!(test_date,expect);
+            
+        }
+      
+
+    }
