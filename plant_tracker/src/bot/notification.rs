@@ -3,6 +3,7 @@ use teloxide::types::ChatId;
 
 use crate::bot::handlers::plants::get_all_plants_status;
 
+use crate::bot::keyboards::back_to;
 use crate::{db_operations, prelude::*};
 
 /// Sends watering reminders to all users who have plants that need urgent attention.
@@ -16,15 +17,9 @@ use crate::{db_operations, prelude::*};
 ///
 /// Errors per user are logged to stderr and skipped — one failing user
 /// does not interrupt notifications for others.
-pub async fn chat_notification(bot: &Bot, pool: &PgPool) {
-    let users = match db_operations::get_all_users(pool).await {
-        Ok(users) => users,
-        Err(e) => {
-            eprintln!("Failed to get users: {e}");
-            return;
-        }
-    };
-
+pub async fn chat_notification(bot: &Bot, pool: &PgPool) -> anyhow::Result<()>{
+    let users = db_operations::get_all_users(pool).await.context("failed to get user")?;
+   
     for user in users {
         let chat_id = ChatId(user.id);
 
@@ -37,9 +32,35 @@ pub async fn chat_notification(bot: &Bot, pool: &PgPool) {
         };
         if status.contains("Полив просрочен") || status.contains("Полить сегодня")
         {
-            let _ = bot
+
+            
+            let msg_id = db_operations::get_current_msg_id(pool, chat_id.0).await.context("Failed to get msg_id")?;
+            
+            tracing::info!("{msg_id}");
+            
+            let delete_prev_msg = bot.delete_message(chat_id, MessageId(msg_id as i32)).await;
+            
+           if delete_prev_msg.is_ok() {
+             tracing::info!("Message was deleted successfully.");
+                } else {
+                    tracing::warn!("Failed to delete message for {}.", chat_id);
+                }
+           
+            
+            let res = bot
                 .send_message(chat_id, format!("💧 Напоминание о поливе:\n{}", status))
-                .await;
+                .reply_markup(back_to())
+                .await?;
+
+
+             db_operations::save_current_msg_id(pool, chat_id.0, res.id.0.into()).await?;
+            
         }
+
+       
+
+        
     }
+
+    Ok(())
 }

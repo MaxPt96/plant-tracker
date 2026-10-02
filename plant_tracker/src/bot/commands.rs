@@ -47,12 +47,14 @@ pub async fn handle_command(bot: Bot, msg: Message, cmd: Command, pool: PgPool) 
     match cmd {
         Command::Start => {
             db_operations::create_user(&pool, chat_id_i64, username).await?;
+            db_operations::save_current_msg_id(&pool, chat_id_i64, msg.id.0.into()).await?;
             bot.send_message(msg.chat.id, "Выбери действие: ")
                 .reply_markup(first_page())
                 .await?;
         }
 
         Command::MainMenu => {
+             db_operations::save_current_msg_id(&pool, chat_id_i64, msg.id.0.into()).await?;
             bot.send_message(msg.chat.id, "Выберите действие: ")
                 .reply_markup(main_menu_buttons())
                 .await?;
