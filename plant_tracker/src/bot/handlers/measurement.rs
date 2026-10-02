@@ -65,9 +65,9 @@ pub async fn receive_plant(
     bot.edit_message_text(
         chat_id,
         msg_id,
-        format!("☘️ {plant_name}\n\nВведите текущий вес растения в граммах:")
-        ,
-    ).reply_markup(back_to_choose_plant())
+        format!("☘️ {plant_name}\n\nВведите текущий вес растения в граммах:"),
+    )
+    .reply_markup(back_to_choose_plant())
     .await?;
 
     dialogue

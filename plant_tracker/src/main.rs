@@ -1,4 +1,3 @@
-
 use axum::{Router, routing::get};
 use plant_tracker::bot;
 

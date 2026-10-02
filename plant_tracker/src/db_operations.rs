@@ -322,30 +322,25 @@ pub async fn get_last_measurement(
     }
 }
 
-
-pub async fn save_current_msg_id(pool: &PgPool,
-    chat_id: i64,
-    msg_id: i64
-) -> sqlx::Result<()> {
-    sqlx::query!("INSERT INTO message_id (user_id, msg_id) VALUES ($1, $2) ON CONFLICT (user_id)
+pub async fn save_current_msg_id(pool: &PgPool, chat_id: i64, msg_id: i64) -> sqlx::Result<()> {
+    sqlx::query!(
+        "INSERT INTO message_id (user_id, msg_id) VALUES ($1, $2) ON CONFLICT (user_id)
                     DO UPDATE SET msg_id = EXCLUDED.msg_id",
-                chat_id,
-                msg_id)
-                
-                .execute(pool)
-                .await?;
+        chat_id,
+        msg_id
+    )
+    .execute(pool)
+    .await?;
 
     Ok(())
 }
 
-pub async fn get_current_msg_id(pool: &PgPool,
-    chat_id: i64,
-) -> sqlx::Result<i64> {
-    let res = sqlx::query!("SELECT msg_id FROM message_id WHERE user_id = $1",
-                chat_id,
-                )
-                .fetch_one(pool)
-                .await?;
+pub async fn get_current_msg_id(pool: &PgPool, chat_id: i64) -> sqlx::Result<i64> {
+    let res = sqlx::query!("SELECT msg_id FROM message_id WHERE user_id = $1", chat_id,)
+        .fetch_one(pool)
+        .await?;
 
+
+    
     Ok(res.msg_id)
 }
