@@ -7,24 +7,29 @@ async fn main() {
         .with_max_level(tracing::Level::WARN)
         .init();
 
-    tracing::info!("Bot has started...");
-    bot::plant_bot().await;
+    // Local development:
+    // run the bot directly without starting the HTTP server.
+    // tracing::info!("Bot has started...");
+    // bot::plant_bot().await;
 
-    // tokio::spawn(async {
-    //     tracing::info!("Bot has started...");
-    //     bot::plant_bot().await;
-    // });
+    // Deployment:
+    // run the bot in a separate task while Axum keeps the HTTP server alive.
+    tokio::spawn(async {
+        tracing::info!("Bot has started...");
+        bot::plant_bot().await;
+    });
 
-    // let app = Router::new().route("/", get(|| async { "OK" }));
+    let app = Router::new().route("/", get(|| async { "OK" }));
 
-    // let port: u16 = std::env::var("PORT")
-    //     .unwrap_or_else(|_| "10000".to_string())
-    //     .parse()
-    //     .unwrap();
+    // Render provides the PORT environment variable.
+    let port: u16 = std::env::var("PORT")
+        .unwrap_or_else(|_| "10000".to_string())
+        .parse()
+        .unwrap();
 
-    // let listener = tokio::net::TcpListener::bind(("0.0.0.0", port))
-    //     .await
-    //     .unwrap();
+    let listener = tokio::net::TcpListener::bind(("0.0.0.0", port))
+        .await
+        .unwrap();
 
-    // axum::serve(listener, app).await.unwrap();
+    axum::serve(listener, app).await.unwrap();
 }
