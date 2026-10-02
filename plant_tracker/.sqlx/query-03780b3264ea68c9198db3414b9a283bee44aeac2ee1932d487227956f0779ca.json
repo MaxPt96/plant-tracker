@@ -1,0 +1,15 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "INSERT INTO message_id (user_id, msg_id) VALUES ($1, $2) ON CONFLICT (user_id)\n                    DO UPDATE SET msg_id = EXCLUDED.msg_id",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Int8",
+        "Int8"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "03780b3264ea68c9198db3414b9a283bee44aeac2ee1932d487227956f0779ca"
+}
