@@ -1,11 +1,6 @@
-mod analytycs_v2;
-pub mod bot;
-pub mod db_operations;
-mod models;
-mod prelude;
-mod utlity;
 
 use axum::{Router, routing::get};
+use plant_tracker::bot;
 
 #[tokio::main]
 async fn main() {
@@ -13,24 +8,24 @@ async fn main() {
         .with_max_level(tracing::Level::WARN)
         .init();
 
-    // tracing::info!("Bot has started...");
-    // bot::plant_bot().await;
+    tracing::info!("Bot has started...");
+    bot::plant_bot().await;
 
-    tokio::spawn(async {
-        tracing::info!("Bot has started...");
-        bot::plant_bot().await;
-    });
+    // tokio::spawn(async {
+    //     tracing::info!("Bot has started...");
+    //     bot::plant_bot().await;
+    // });
 
-    let app = Router::new().route("/", get(|| async { "OK" }));
+    // let app = Router::new().route("/", get(|| async { "OK" }));
 
-    let port: u16 = std::env::var("PORT")
-        .unwrap_or_else(|_| "10000".to_string())
-        .parse()
-        .unwrap();
+    // let port: u16 = std::env::var("PORT")
+    //     .unwrap_or_else(|_| "10000".to_string())
+    //     .parse()
+    //     .unwrap();
 
-    let listener = tokio::net::TcpListener::bind(("0.0.0.0", port))
-        .await
-        .unwrap();
+    // let listener = tokio::net::TcpListener::bind(("0.0.0.0", port))
+    //     .await
+    //     .unwrap();
 
-    axum::serve(listener, app).await.unwrap();
+    // axum::serve(listener, app).await.unwrap();
 }
