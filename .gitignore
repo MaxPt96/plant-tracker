@@ -3,6 +3,8 @@
 debug
 target
 /target
+
+tests
 .env
 *.db
 *.db-shm

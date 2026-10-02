@@ -22,3 +22,4 @@ anyhow = "1.0.102"
 
 
 tg-calendar-widget = { version = "0.1.1", features = ["teloxide"] }
+teloxide_tests = "0.4.0"
