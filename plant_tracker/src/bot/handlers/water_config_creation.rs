@@ -4,9 +4,7 @@ use crate::{
     bot::{
         dialogue::WateringConfigDialog,
         keyboards::{back_to, back_to_my_plants},
-    },
-    db_operations,
-    prelude::*,
+    }, db_operations::{self, get_current_threshold}, prelude::*,
 };
 
 /// Handles plant selection for pot configuration.
@@ -131,6 +129,7 @@ pub async fn receive_dry_soil_weight(
     bot: Bot,
     dialogue: MyDialogue,
     msg: Message,
+    pool: PgPool,
     (prev_msg_id, plant_id, wet_weight): (MessageId, i64, i64),
 ) -> HandlerResult {
     let chat_id = msg.chat.id;
@@ -138,10 +137,36 @@ pub async fn receive_dry_soil_weight(
 
     bot.delete_message(chat_id, msg_id).await.ok();
 
+    let prev_treshhold = get_current_threshold(&pool, plant_id)
+    .await.map_or("".to_owned(), |f| {
+        let f_to_percent = f * 100.0;
+        format!("{f_to_percent} %")
+
+
+    });
+
     match msg.text() {
         Some(text) => match text.parse::<i64>() {
             Ok(dry_weight) if dry_weight > 0 && dry_weight < wet_weight => {
-                bot.edit_message_text(
+
+                if !prev_treshhold.is_empty() {
+                    bot.edit_message_text(
+                    chat_id,
+                    prev_msg_id,
+
+                    format!(
+                         "Укажите, при каком проценте испарившейся воды нужно напомнить о поливе (например, 67). \n
+                         \nПредыдущее значение - {prev_treshhold}
+                     "
+                    )
+                   
+                )
+                .await?;
+
+                }
+
+                else {
+                     bot.edit_message_text(
                     chat_id,
                     prev_msg_id,
                     "Укажите, при каком проценте испарившейся воды нужно напомнить о поливе (например, 67).\n\n\
@@ -153,6 +178,10 @@ pub async fn receive_dry_soil_weight(
                      Для влаголюбивых (хлорофитум) — 50–60."
                 )
                 .await?;
+
+                }
+
+               
 
                 dialogue
                     .update(MeasurementDialogue::WateringConfig(

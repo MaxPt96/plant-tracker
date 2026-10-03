@@ -344,3 +344,16 @@ pub async fn get_current_msg_id(pool: &PgPool, chat_id: i64) -> sqlx::Result<i64
     
     Ok(res.msg_id)
 }
+
+
+pub async fn get_current_threshold(pool: &PgPool, plant_id: i64) -> sqlx::Result<f32> {
+    let res = sqlx::query!(r#"
+    SELECT threshold_pct FROM watering_config
+    where plant_id = $1 and is_active = 'true'
+    "#, plant_id)
+    .fetch_one(pool)
+    .await?;
+
+    Ok(res.threshold_pct)
+
+}
