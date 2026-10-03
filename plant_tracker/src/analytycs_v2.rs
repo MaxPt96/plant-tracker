@@ -106,7 +106,6 @@ fn last_feed_date_test() {
    
     let today = Utc::now().with_timezone(&Minsk).date_naive();
 
-
     let feed_day = today - chrono::Duration::days(7);
     let feed_dt = Minsk
         .from_local_datetime(&feed_day.and_hms_opt(12, 0, 0).unwrap())

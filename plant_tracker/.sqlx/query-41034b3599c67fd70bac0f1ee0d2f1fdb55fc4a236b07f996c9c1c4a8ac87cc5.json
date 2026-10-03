@@ -1,0 +1,22 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n    SELECT threshold_pct FROM watering_config\n    where plant_id = $1 and is_active = 'true'\n    ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "threshold_pct",
+        "type_info": "Float4"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Int8"
+      ]
+    },
+    "nullable": [
+      false
+    ]
+  },
+  "hash": "41034b3599c67fd70bac0f1ee0d2f1fdb55fc4a236b07f996c9c1c4a8ac87cc5"
+}
