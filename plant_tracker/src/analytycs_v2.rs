@@ -1,3 +1,5 @@
+use chrono_tz::Europe::Minsk;
+
 use crate::models::{PlantMeasurementsHistory, PlantWithLastFeedWatering};
 
 /// Returns days elapsed since the last feed-watering measurement.
@@ -6,8 +8,8 @@ use crate::models::{PlantMeasurementsHistory, PlantWithLastFeedWatering};
 /// - `Some(days)` — days since last `AfterWateringWithFeed`
 /// - `None` — no feed-watering recorded yet
 pub fn days_from_last_feed(last_feed: &PlantWithLastFeedWatering) -> Option<u32> {
-    let date = last_feed.date?;
-    let days = (chrono::Utc::now() - date).num_days();
+    let date = last_feed.date?.with_timezone(&Minsk);
+    let days = (chrono::Utc::now().with_timezone(&Minsk) - date).num_days();
 
     Some(days.max(0) as u32)
 }
@@ -89,3 +91,33 @@ pub fn format_last_feed(plants: &[PlantWithLastFeedWatering]) -> String {
         .collect::<Vec<_>>()
         .join("\n")
 }
+
+
+
+
+#[cfg(test)]
+    mod tests {
+        use chrono::{TimeZone, Utc};
+
+use super::*;
+
+        #[test]
+fn last_feed_date_test() {
+   
+    let today = Utc::now().with_timezone(&Minsk).date_naive();
+
+
+    let feed_day = today - chrono::Duration::days(7);
+    let feed_dt = Minsk
+        .from_local_datetime(&feed_day.and_hms_opt(12, 0, 0).unwrap())
+        .unwrap()
+        .with_timezone(&Utc);
+
+    let last_feed = PlantWithLastFeedWatering {
+        plants_name: "test".to_string(),
+        date: Some(feed_dt),
+    };
+
+    assert_eq!(days_from_last_feed(&last_feed), Some(7));
+}
+    }
