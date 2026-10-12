@@ -66,6 +66,8 @@ pub struct PlantWithLastFeedWatering {
 pub struct User {
     /// Telegram chat ID, used as the primary identifier.
     pub id: i64,
+  
+    
 }
 
 #[derive(Debug, FromRow)]

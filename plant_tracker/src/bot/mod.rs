@@ -20,8 +20,9 @@ use teloxide::utils::command::BotCommands;
 use crate::bot::commands::handle_command;
 use crate::bot::notification::chat_notification;
 use crate::bot::routing::{callback_branches, message_branches};
+use crate::db_operations::{ get_chat_id_for_notifications};
 
-use chrono::{Local, Timelike, Utc};
+use chrono::{ Timelike, Utc};
 
 use crate::prelude::*;
 /// Entry point of the bot. Initialises the database pool, starts the
@@ -95,10 +96,19 @@ pub async fn notification_loop(bot_clone: Bot, pool_clone: PgPool) -> anyhow::Re
 
         let now = Utc::now().with_timezone(&Tz::Europe__Minsk);
         if now.hour() >= 12 {
-            chat_notification(&bot_clone, &pool_clone).await?;
-            tokio::time::sleep(Duration::from_secs(60)).await;
+            let users_to_send = get_chat_id_for_notifications(&pool_clone)
+            .await;
+
+            match users_to_send {
+                Ok(users) => {  chat_notification(&bot_clone, &pool_clone, users).await;}
+                Err(e) =>  tracing::error!("select users: {e:?}"),
+            }
+
+           
+
+
         }
-        tokio::time::sleep(Duration::from_secs(86400)).await;
+         tokio::time::sleep(Duration::from_secs(60)).await;
         //  tokio::time::sleep(Duration::from_secs(5)).await; // for tests
 
         tracing::warn!("notification loop ended");

@@ -2,7 +2,9 @@ use crate::models::{
     Measurements, Plant, PlantDetails, PlantMeasurementsHistory, PlantWithLastFeedWatering, User,
 };
 
+use anyhow::Context;
 use chrono::{DateTime, Utc};
+use chrono_tz::Tz;
 use sqlx::PgPool;
 
 /// Registers a user by their Telegram ID.
@@ -357,3 +359,33 @@ pub async fn get_current_threshold(pool: &PgPool, plant_id: i64) -> sqlx::Result
     Ok(res.threshold_pct)
 
 }
+
+pub async fn get_chat_id_for_notifications(pool: &PgPool) -> anyhow::Result<Vec<i64>> {
+    let today = Utc::now().with_timezone(&Tz::Europe__Minsk)
+    .date_naive();
+
+    let result = sqlx::query_scalar!(r#"SELECT id FROM users WHERE last_notification IS DISTINCT FROM $1 "#, today)
+    .fetch_all(pool)
+    .await
+    .context("Failed to get last notification dates");
+
+    result
+
+
+}
+
+pub async fn update_last_notification_time(pool: &PgPool, id: i64) -> anyhow::Result<()> {
+    let today = Utc::now().with_timezone(&Tz::Europe__Minsk).date_naive();
+
+    sqlx::query!(
+        "UPDATE users SET last_notification = $1 WHERE id = $2",
+        today,
+        id
+    )
+    .execute(pool)
+    .await
+    .context("Failed to update last notification date")?;
+
+    Ok(())
+}
+

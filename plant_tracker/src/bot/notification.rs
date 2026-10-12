@@ -17,45 +17,41 @@ use crate::{db_operations, prelude::*};
 ///
 /// Errors per user are logged to stderr and skipped — one failing user
 /// does not interrupt notifications for others.
-pub async fn chat_notification(bot: &Bot, pool: &PgPool) -> anyhow::Result<()> {
-    let users = db_operations::get_all_users(pool)
-        .await
-        .context("failed to get user")?;
-
-    for user in users {
-        let chat_id = ChatId(user.id);
-
-        let status = match get_all_plants_status(pool, user.id).await {
-            Ok(s) => s,
-            Err(e) => {
-                eprintln!("Failed to get status for {}: {e}", user.id);
-                continue;
-            }
-        };
-        if status.contains("Полив просрочен") || status.contains("Полить сегодня")
-        {
-            let msg_id = db_operations::get_current_msg_id(pool, chat_id.0)
-                .await
-                .context("Failed to get msg_id")?;
-
-            tracing::info!("{msg_id}");
-
-            let delete_prev_msg = bot.delete_message(chat_id, MessageId(msg_id as i32)).await;
-
-            if delete_prev_msg.is_ok() {
-                tracing::info!("Message was deleted successfully.");
-            } else {
-                tracing::warn!("Failed to delete message for {}.", chat_id);
-            }
-
-            let res = bot
-                .send_message(chat_id, format!("💧 Напоминание о поливе:\n{}", status))
-                .reply_markup(back_to())
-                .await?;
-
-            db_operations::save_current_msg_id(pool, chat_id.0, res.id.0.into()).await?;
+pub async fn chat_notification(bot: &Bot, pool: &PgPool, users: Vec<i64>) {
+    for id in users {
+        if let Err(e) = notify_user(bot, pool, id).await {
+            tracing::error!("user {id}: {e:?}");
         }
     }
+}
+
+
+async fn notify_user(bot: &Bot, pool: &PgPool, id: i64) -> anyhow::Result<()> {
+    let chat_id = ChatId(id);
+    let status = get_all_plants_status(pool, id).await?;
+
+    if !(status.contains("Полив просрочен") || status.contains("Полить сегодня")) {
+        return Ok(());
+    }
+
+    // Удаление старого сообщения не критично
+    if let Ok(msg_id) = db_operations::get_current_msg_id(pool, id).await {
+        if let Err(e) = bot
+            .delete_message(chat_id, MessageId(msg_id as i32))
+            .await
+        {
+            tracing::warn!("delete msg for {id}: {e}");
+        }
+    }
+
+    let res = bot
+        .send_message(chat_id, format!("💧 Напоминание о поливе:\n{}", status))
+        .reply_markup(back_to())
+        .await?;
+
+    // Сразу после отправки, чтобы не было дублей
+    db_operations::update_last_notification_time(pool, id).await?;
+    db_operations::save_current_msg_id(pool, id, res.id.0.into()).await?;
 
     Ok(())
 }
